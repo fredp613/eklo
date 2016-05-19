@@ -26,7 +26,8 @@ export function start() {
 			params: {
 				api_username: process.env.EMAIL,
 				api_password: process.env.VOIP_SMS_PWD,
-				method: "getSMS"
+				method: "getSMS",
+				type: "1",
 			}
 		  })
 		  .then(function (response) {
