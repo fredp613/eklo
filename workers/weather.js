@@ -6,15 +6,27 @@ class Weather {
 			
 	}
 	
-	test(keywords) {
-		keywords ? this.keywords = keywords : [];
-		console.log(this.keywords)
-		console.log("hi we are askign for weather")	
-	}
+	// api.openweathermap.org/data/2.5/weather?id=2172797&APPID=7f3f737bf6c941de0057e89d4b6f6300
 	
-	getWeather(city, callback) {		
-		const msg = "Current weather in " + city + " is 13 degrees";
-		callback("Weather in ottawa: 13 degrees");
+	getWeather(city, callback) {
+
+		let messageStr = "";
+		axios.get("http://api.openweathermap.org/data/2.5/weather", {
+			params: {
+				id:"2172797",
+				APPID:"7f3f737bf6c941de0057e89d4b6f6300"
+			}
+		}).then((response)=>{			
+			messageStr += "Currently "
+			messageStr += (parseInt(response.data.main.temp)/20).toString();
+			messageStr += " degrees"
+			console.log(messageStr);
+			return callback(messageStr, null);
+		}).catch((response)=>{
+			console.log(response);
+			return callback("error", "error");
+		})
+	
 	}
 
 };
