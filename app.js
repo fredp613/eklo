@@ -19,7 +19,7 @@ const router = express.Router();
 
 
 // export default function(app, config) {
-
+	
 	let connection_string = 'mongodb://localhost/eklo';
 
 	if (process.env.MONGOLAB_URI) {

@@ -1,73 +1,143 @@
 import axios from "axios";
 import Weather from "./workers/weather";
+import News from "./workers/news";
 import Message from "./models/Message";
+import Context from "./classes/context"
 
 
 export function start() {
 
 
 	setInterval(()=> {
-		 
+		const context = new Context();
+		
 		axios.get("https://voip.ms/api/v1/rest.php", {
 			params: {
 				api_username: process.env.EMAIL,
-				api_password: process.env.VOIP_SMS_PWD,
+				api_password: process.env.VOIP_PWD,
 				method: "getSMS",
 				type: "1",
 			}
 		  })
-		  .then(function (response) {
-		  	console.log(response.data.sms.length)
-		  	if (response.data.sms.length > 0) {		  		
+		  .then(function (response) {		  	
+
+		  	if (response.data.sms) {
+		  				  		
 		  		let messages = response.data.sms		  		
+		  		
 		  		messages.filter((event)=>{
-		  			let message = event.message
-		  			let messageId = event.id		  			 
-		  			newMessage(messageId, function(data) {
-		  				if (data) {
-		  					console.log(message);
-		  					if (message.indexOf("Weather") !== -1) {		  				
-		  						
-				  				Weather.getWeather("ottawa", (msg, err)=>{
-				  					if (err) {
-				  						return;
-				  					}				  									
-				  					let message = new Message({
-									  message_id: messageId, 
-									  did: event.did,
-									  dst: event.contact, 
-									  message: msg,	
-									  responseSent: true 
-									});		
-				  					createMessage(message, (data)=>{
+		  				  			 
+		  			newMessage(event.id, function(isNew) {
+		  				if (isNew) {	
+		  					context.getContext(event.message, (data)=>{
+								console.log(event.message)	
+								switch (data) {
+									case "weather":														
+										sendWeatherMessage(event)
+										break;							
+									case "news": 
+										sendNewsMessage(event);
+										break;
+									case "unknown":
+										sendUnknownContextMessage(event)
+									default:
+										break;
 
-				  						if (data == "success") {
-				  							//send voip api message				  							
-				  							sendMessage(message, (data)=>{
-				  								if (data == "success") {
-				  									console.log("message sent");
-				  								} else {
-				  									console.log("message not sent");
-				  								}	
-				  							})
-				  						}
-				  					});
-				  				});
-		  					}
+								}
+
+							});	
 		  				}
-
 		  			})		  				
 		  		})
 		  	}		  			    	   
 		  })
 		  .catch((response) => {
-		    console.log(response.error);
+		  	console.log(response)
+		    // console.log(response.error);
 		  });
 
 	}, 2000)
 
 
 }
+
+
+////SERVICE FUNCTIONS
+function sendUnknownMessage(event, callback) {
+	let message = new Message({
+		  message_id: event.id, 
+		  did: event.did,
+		  dst: event.contact, 
+		  message: "The message you sent could not determine context. Please make sure that ...",	
+		  responseSent: true 
+		});	
+	createAndSendMessageVOIP(message)
+}
+
+function sendWeatherMessage(event, callback) {
+
+	Weather.getWeather("ottawa", (msg, err)=>{
+		if (err) {
+			console.log(err)
+			return;
+		}				  									
+		let message = new Message({
+		  message_id: event.id, 
+		  did: event.did,
+		  dst: event.contact, 
+		  message: msg,	
+		  responseSent: true 
+		});		
+		createAndSendMessageVOIP(message)
+	});
+
+}
+
+function sendNewsMessage(event, callback) {
+
+	News.getSearchResults(event.message, (msg, err)=>{
+		if (err) {
+			console.log(err)
+			return;
+		}				  									
+
+		let message = new Message({
+		  message_id: event.id, 
+		  did: event.did,
+		  dst: event.contact, 
+		  message: msg,	
+		  responseSent: true 
+		});		
+		createAndSendMessageVOIP(message)
+	});
+
+}
+
+
+
+
+
+////HELPER FUNCTIONS
+
+function createAndSendMessageVOIP(message) {
+	createMessageDb(message, (data)=>{
+			console.log(message)
+			if (data == "success") {
+				//send voip api message				  							
+				sendMessage(message, (data)=>{
+					if (data == "success") {
+						console.log("message sent");
+						callback("success")
+					} else {
+						callback("error")
+						console.log("message not sent");
+					}	
+				})
+			}
+		});
+}
+
+
 
 //private methods
 function newMessage(messageId, callback) {
@@ -82,11 +152,9 @@ function newMessage(messageId, callback) {
 
 }
 
-function createMessage(message, callback) {
+function createMessageDb(message, callback) {
 	message.save(function(err) {
-		console.log("creating")
-		console.log(err)
-		
+				
 		if (err) {			
 			return callback("error");
 		} else {			
@@ -102,7 +170,7 @@ function sendMessage(message, callback) {
 	axios.get("https://voip.ms/api/v1/rest.php", {
 			params: {
 				api_username: process.env.EMAIL,
-				api_password: process.env.VOIP_SMS_PWD,
+				api_password: process.env.VOIP_PWD,
 				method: "sendSMS",
 				did: message.did,
 				dst: message.dst,
@@ -110,6 +178,7 @@ function sendMessage(message, callback) {
 			}
 		  })
 		  .then((response) => {
+		  	console.log(response);
 		  	 return callback("success");
 		  }).catch((response)=>{
 		  	 return callback("error");

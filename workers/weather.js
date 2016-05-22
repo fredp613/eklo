@@ -1,6 +1,6 @@
 import axios from "axios"
 
-// https://voip.ms/api/v1/rest.php?api_username=fredp613@gmail.com&api_password=Fredp614$&method=getSMS
+
 class Weather {
 	constructor() {
 			
@@ -17,13 +17,13 @@ class Weather {
 				APPID:"7f3f737bf6c941de0057e89d4b6f6300"
 			}
 		}).then((response)=>{			
-			messageStr += "Currently "
+			messageStr += "Current Temperature is "
 			messageStr += (parseInt(response.data.main.temp)/20).toString();
 			messageStr += " degrees"
-			console.log(messageStr);
+			// console.log(messageStr);
 			return callback(messageStr, null);
 		}).catch((response)=>{
-			console.log(response);
+			// console.log(response);
 			return callback("error", "error");
 		})
 	
