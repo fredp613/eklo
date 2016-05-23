@@ -18,7 +18,7 @@ class Weather {
 			}
 		}).then((response)=>{			
 			messageStr += "Current Temperature is "
-			messageStr += (parseInt(response.data.main.temp)/20).toString();
+			messageStr += (parseInt(response.data.main.temp)-273.15).toString().substring(0,4);
 			messageStr += " degrees"
 			// console.log(messageStr);
 			return callback(messageStr, null);

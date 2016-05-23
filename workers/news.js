@@ -30,24 +30,27 @@ class News {
 		axios.post("https://api.datamarket.azure.com/Bing/Search/v1/News?Query=%27"+keyword+"%27"+category, params, config)
 		.then((response)=>{						
 					
-			console.log(response.data.d.results)
-
+					
 			var rrr = response.data.d.results[1];
 
-			googl.setKey("AIzaSyCVToVNB1ItRtS6CtFGJaHfAZStVr34wtI");
+			googl.setKey(process.env.GOOGLE_API_KEY);
 			googl.getKey();
 
 			googl.shorten(rrr.Url)
 				.then((shortUrl)=>{
-					const message = rrr.Title + "\n" + "Source: " + rrr.Source + "\n" + shortUrl		
+					console.log(rrr.Title.length)
+					let message = "";
+					if (rrr.Title.length > 70) {
+						message = rrr.Title.substring(0,70) + "..." + "\n" + "Source: " + rrr.Source + "\n" + shortUrl		
+					} else {
+						message = rrr.Title + "\n" + "Source: " + rrr.Source + "\n" + shortUrl		
+					}
+					
 					return callback(message)
 				}).catch((err)=>{
 					console.log(err)
 					return callback("error", "error")
 				})
-
-
-
 					
 
 			// response.data.d.results.forEach((result)=>{
