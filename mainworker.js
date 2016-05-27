@@ -29,12 +29,14 @@ export function start() {
 		  				  			 
 		  			newMessage(event.id, function(isNew) {
 		  				if (isNew) {	
-		  					context.getContext(event.message, (data)=>{
-								console.log(event.message)	
+		  					context.getContext(event.message, (data)=>{								
 								switch (data) {
 									case "weather":														
-										sendWeatherMessage(event)
-										break;							
+										sendWeatherMessage(event);
+										break;	
+									case "forecast":
+										sendWeatherForecastMessage(event);	
+										break;					
 									case "news": 
 										sendNewsMessage(event);
 										break;
@@ -63,7 +65,7 @@ export function start() {
 
 
 ////SERVICE FUNCTIONS
-function sendUnknownMessage(event, callback) {
+function sendUnknownContextMessage(event, callback) {
 	let message = new Message({
 		  message_id: event.id, 
 		  did: event.did,
@@ -75,8 +77,10 @@ function sendUnknownMessage(event, callback) {
 }
 
 function sendWeatherMessage(event, callback) {
-
-	Weather.getWeather("ottawa", (msg, err)=>{
+	
+	const city = getCityFromMsgString(event.message);
+	
+	Weather.getWeather(city, (msg, err)=>{
 		if (err) {
 			console.log(err)
 			return;
@@ -90,6 +94,41 @@ function sendWeatherMessage(event, callback) {
 		});		
 		createAndSendMessageVOIP(message)
 	});
+
+}
+
+
+function sendWeatherForecastMessage(event, callback) {
+
+	const city = getCityFromMsgString(event.message);
+
+	Weather.getWeatherForecast(city, (msg, err)=> {
+		if (err) {
+			console.log(err);
+			return;
+		}
+
+		let message = new Message({
+			message_id: event.id,
+			did: event.did,
+			dst: event.contact,
+			message: msg,
+			responseSent: true
+		});
+		createAndSendMessageVOIP(message)
+
+	})
+}
+
+function getCityFromMsgString(message) {
+	const msg = message.toLowerCase();
+	if (msg.indexOf("forecast") > -1) {
+		let lastI = msg.lastIndexOf("weather forecast");		
+		return msg.substring(lastI, 80).trim();
+	} else {
+		let last2i = msg.lastIndexOf("weather");		
+		return msg.substring(last2i, 80).trim();
+	}
 
 }
 
@@ -177,8 +216,7 @@ function sendMessage(message, callback) {
 				message: message.message
 			}
 		  })
-		  .then((response) => {
-		  	console.log(response);
+		  .then((response) => {		  	
 		  	 return callback("success");
 		  }).catch((response)=>{
 		  	 return callback("error");

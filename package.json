@@ -23,6 +23,7 @@
     "glob": "^7.0.3",
     "goo.gl": "^0.1.4",
     "jsonwebtoken": "^6.2.0",
+    "lodash": "^4.13.1",
     "method-override": "^2.3.5",
     "mongoose": "^4.4.17",
     "nodemailer": "^2.4.1",
